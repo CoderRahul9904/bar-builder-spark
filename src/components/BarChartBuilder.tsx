@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusIcon, TrendingUpIcon } from 'lucide-react';
+import { PlusIcon, TrendingUpIcon, LogInIcon, UserPlusIcon } from 'lucide-react';
 
 interface DataPoint {
   day: string;
@@ -51,6 +52,22 @@ const BarChartBuilder: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-bg p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
+        {/* Navigation */}
+        <div className="flex justify-end gap-3 animate-fade-in">
+          <Link to="/login">
+            <Button variant="outline" className="h-10 px-4 border-primary/20 text-primary hover:bg-primary/10">
+              <LogInIcon className="h-4 w-4 mr-2" />
+              Sign In
+            </Button>
+          </Link>
+          <Link to="/signup">
+            <Button className="h-10 px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow">
+              <UserPlusIcon className="h-4 w-4 mr-2" />
+              Sign Up
+            </Button>
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="text-center space-y-4 animate-fade-in">
           <div className="flex items-center justify-center gap-3 mb-2">
