@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import api from '@/utils/api';
+import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +10,14 @@ import { EyeIcon, EyeOffIcon, UserPlusIcon, TrendingUpIcon, CheckIcon } from 'lu
 import { useToast } from '@/hooks/use-toast';
 
 const SignupPage: React.FC = () => {
+
+
+  useEffect(() => {
+    if (localStorage.getItem('userId')) {
+      window.location.href = '/dashboard';
+    }
+  }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -51,6 +61,36 @@ const SignupPage: React.FC = () => {
     if (!validateForm()) return;
     
     setIsLoading(true);
+    try {
+      const response = await api.post('/api/v1/signup', {
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (response.data.success) {
+        toast({
+          title: "Account Created Successfully!",
+          description: "Welcome to Bar Chart Builder! You can now sign in.",
+        });
+        // Redirect to login or dashboard
+        localStorage.setItem('userId', response.data.userId);
+      } else {
+        toast({
+          title: "Signup Failed",
+          description: response.data.error || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast({
+        title: "Signup Failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
     
     try {
       // Your signup API call would go here
@@ -71,6 +111,9 @@ const SignupPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+
+    const navigate = useNavigate();
+    navigate('/login');
   };
 
   const passwordRequirements = [

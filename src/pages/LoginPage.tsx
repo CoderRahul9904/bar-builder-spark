@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { EyeIcon, EyeOffIcon, LogInIcon, TrendingUpIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import api from '@/utils/api';
 
 const LoginPage: React.FC = () => {
+
+  useEffect(() => {
+      if (localStorage.getItem('userId')) {
+        window.location.href = '/dashboard';
+      }
+    }, []);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -18,18 +26,33 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Here you would implement your backend login logic
-    // For now, just showing a toast
+    if (!email || !password) {
+      toast({
+        title: "Missing Credentials",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
       // Your login API call would go here
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
+      const response = await api.post('/api/v1/login', { email, password });
+      if (response.status !== 200) { 
+        throw new Error('Login failed');
+      }
+      // Handle successful login
+      localStorage.setItem('userId', response.data.userId);
       toast({
         title: "Login Successful",
         description: "Welcome back! Redirecting to dashboard...",
       });
       
       // Redirect logic would go here
+      
+      window.location.href = '/dashboard';
+      // or use navigate('/dashboard') if you prefer React Router's navigation
     } catch (error) {
       toast({
         title: "Login Failed",
