@@ -1,31 +1,71 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusIcon, TrendingUpIcon, LogInIcon, UserPlusIcon } from 'lucide-react';
+import api from '@/utils/api';
+import { toast } from 'sonner';
 
 interface DataPoint {
   day: string;
   value: number;
 }
 
+
 const BarChartBuilder: React.FC = () => {
+
   const [data, setData] = useState<DataPoint[]>([]);
+ 
+  useEffect(() => {
+    const fetchStockData = async () => {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        window.location.href = '/login';
+        return;
+      }
+      try {
+        const stockData = await api.get(`/api/v1/get-stock?userId=${userId}`);
+        if (stockData.status === 200) {
+          const stock = stockData.data.stock || [];
+          const formattedData = stock.map((value: number, index: number) => ({
+            day: `Day ${index + 1}`,
+            value,
+          }));
+          setData(formattedData);
+        }
+      } catch (error) {
+        console.error("Error fetching stock data:", error);
+      }
+    };
+
+    fetchStockData();
+  }, []);
   const [inputValue, setInputValue] = useState<string>('');
 
-  const handleAddValue = () => {
-    const numericValue = parseFloat(inputValue);
-    
+  const handleAddValue = async() => {
+    const numericValue = parseInt(inputValue);
     if (!isNaN(numericValue) && inputValue.trim() !== '') {
-      const newDataPoint: DataPoint = {
-        day: `Day ${data.length + 1}`,
-        value: numericValue,
-      };
-      
-      setData([...data, newDataPoint]);
+      const userId = localStorage.getItem('userId');
+      const stockData = await api.post(`/api/v1/add-stock`, {
+        userId,
+        currentDateStock: numericValue
+      });
+        if (stockData.status === 200) {
+          const stock = stockData.data.stock!
+          const formattedData = stock.map((value: number, index: number) => ({
+            day: `Day ${index + 1}`,
+            value,
+          }));
+          console.log("Updated stock data:", formattedData);
+          setData([...data,formattedData]);
+        }
       setInputValue('');
+      
+      window.location.href = '/dashboard';
+    }else{
+      console.error("Invalid input value. Please enter a valid number.");
     }
   };
 
