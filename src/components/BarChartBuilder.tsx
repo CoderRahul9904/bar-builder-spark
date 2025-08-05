@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart,LineChart,Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusIcon, TrendingUpIcon, LogInIcon, UserPlusIcon } from 'lucide-react';
+import { PlusIcon, TrendingUpIcon, LogInIcon, UserPlusIcon,EditIcon } from 'lucide-react';
 import api from '@/utils/api';
 import { toast } from 'sonner';
 
 interface DataPoint {
-  day: string;
+  date: Date;
   value: number;
 }
 
-
+interface stock {
+  date: Date;
+  value: number;
+}
 const BarChartBuilder: React.FC = () => {
 
   const [data, setData] = useState<DataPoint[]>([]);
@@ -29,9 +32,9 @@ const BarChartBuilder: React.FC = () => {
         const stockData = await api.get(`/api/v1/get-stock?userId=${userId}`);
         if (stockData.status === 200) {
           const stock = stockData.data.stock || [];
-          const formattedData = stock.map((value: number, index: number) => ({
-            day: `Day ${index + 1}`,
-            value,
+          const formattedData = stock.map((value: stock, index: number) => ({
+            date: value.date ? new Date(value.date).toLocaleDateString() : `Day ${index + 1}`,
+            value: value.value,
           }));
           setData(formattedData);
         }
@@ -54,9 +57,9 @@ const BarChartBuilder: React.FC = () => {
       });
         if (stockData.status === 200) {
           const stock = stockData.data.stock!
-          const formattedData = stock.map((value: number, index: number) => ({
-            day: `Day ${index + 1}`,
-            value,
+          const formattedData = stock.map((value: stock, index: number) => ({
+            date: value.date ? new Date(value.date).toLocaleDateString() : `Day ${index + 1}`,
+            value: value.value,
           }));
           console.log("Updated stock data:", formattedData);
           setData([...data,formattedData]);
@@ -69,12 +72,34 @@ const BarChartBuilder: React.FC = () => {
     }
   };
 
+//   const handleDelete = async (entryId: string) => {
+//   const userId = localStorage.getItem('userId');
+//   if (!userId) return;
+
+//   try {
+//     // either use DELETE with a request body, or POST – whatever your API supports
+//     const res = await api.delete('/api/v1/delete-stock', {
+//       userId,
+//       stockId: entryId,
+//     })
+
+//     if (res.status === 200) {
+//       setData(data.filter(dp => dp.id !== entryId));
+//       toast.success('Entry deleted');
+//     }
+//   } catch (err) {
+//     console.error('Delete failed', err);
+//     toast.error('Could not delete entry');
+//   }
+//  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleAddValue();
     }
   };
 
+  const userId= localStorage.getItem('userId');
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -93,8 +118,9 @@ const BarChartBuilder: React.FC = () => {
     <div className="min-h-screen bg-gradient-bg p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Navigation */}
+        {!userId &&
         <div className="flex justify-end gap-3 animate-fade-in">
-          <Link to="/login">
+           <Link to="/login">
             <Button variant="outline" className="h-10 px-4 border-primary/20 text-primary hover:bg-primary/10">
               <LogInIcon className="h-4 w-4 mr-2" />
               Sign In
@@ -106,7 +132,17 @@ const BarChartBuilder: React.FC = () => {
               Sign Up
             </Button>
           </Link>
-        </div>
+        </div>}
+        {userId && (
+          <div className="flex justify-end animate-fade-in">
+            <Link to="/login" onClick={() => localStorage.removeItem('userId')}>
+              <Button variant="outline" className="h-10 px-4 border-primary/20 text-primary hover:bg-primary/10">
+                <LogInIcon className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Header */}
         <div className="text-center space-y-4 animate-fade-in">
@@ -153,6 +189,9 @@ const BarChartBuilder: React.FC = () => {
 
         {/* Chart Section */}
         <Card className="bg-gradient-card shadow-elegant border-border/50 animate-fade-in">
+          <div className="flex items-center justify-between p-4 border-b border-border/20">
+            <div className="flex items-center justify-between w-full">
+
           <CardHeader>
             <CardTitle className="text-xl text-foreground flex items-center gap-2">
               <TrendingUpIcon className="h-5 w-5 text-primary" />
@@ -170,6 +209,12 @@ const BarChartBuilder: React.FC = () => {
               }
             </CardDescription>
           </CardHeader>
+            <Button variant="outline" className="h-10 px-4 border-primary/20 text-primary hover:bg-primary/10">
+              <EditIcon className="h-4 w-4 mr-2" />
+                Edit
+            </Button>
+            </div>
+          </div>
           <CardContent className="pt-4">
             {data.length === 0 ? (
               <div className="h-80 flex items-center justify-center border-2 border-dashed border-border rounded-lg bg-muted/20">
@@ -182,7 +227,7 @@ const BarChartBuilder: React.FC = () => {
             ) : (
               <div className="h-80 w-full animate-chart-grow">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
+                  {/* <BarChart
                     data={data}
                     margin={{
                       top: 20,
@@ -208,7 +253,40 @@ const BarChartBuilder: React.FC = () => {
                       radius={[4, 4, 0, 0]}
                       className="hover:opacity-80 transition-opacity duration-200"
                     />
-                  </BarChart>
+                  </BarChart> */}
+                  <LineChart
+                    data={data}
+                    margin={{
+                      top: 20,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      axisLine={{ stroke: 'hsl(var(--border))' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      axisLine={{ stroke: 'hsl(var(--border))' }}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line 
+                      dataKey="value" 
+                      fill="hsl(var(--chart-primary))"
+                      stroke="hsl(var(--chart-primary))"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: 'hsl(var(--chart-primary))', stroke: 'hsl(var(--border))', strokeWidth: 2 }}
+                      activeDot={{ r: 6, stroke: 'hsl(var(--chart-primary))', strokeWidth: 2 }}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      isAnimationActive={false}
+                      className="hover:opacity-80 transition-opacity duration-200"
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             )}
